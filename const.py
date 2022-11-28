@@ -1,39 +1,76 @@
-# max number of components in a RPM
-MAX_COMPONENTS = 2
+from PIL import Image
+from RAVEN import RAVEN
+from MakeShape import HEX, SQUARE
+import numpy as np
 
-# canvas parameters
-IMAGE_SIZE = 160
-CENTER = (IMAGE_SIZE / 2, IMAGE_SIZE / 2)
-DEFAULT_RADIUS = IMAGE_SIZE / 4
-DEFAULT_WIDTH = 2
+b = np.load('RAVEN_1_train.npz')
+images = b['image'] # image: a (16, 160, 160) array where all 16 figures in each problem are stacked
+                    # on the first dimension.
+                    # Note that first 8 figures compose the problem matrix and the last 8 figures are choices.
+target = b['target']# target: the index of the correct answer in the answer set. Note that it starts from 0
+                    # and you should offset it by 8 if you want to retrieve it from the image array.
 
-# Attribute parameters
-# Number
-NUM_VALUES = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-NUM_MIN = 0
-NUM_MAX = len(NUM_VALUES) - 1
+#for num in range(160):
+    #for num2 in range(160):
+        #if images[1][num][num2] != 255:
+            #print(images[1][num][num2], num, num2)
 
-# Uniformity
-UNI_VALUES = [False, False, False, True]
-UNI_MIN = 0
-UNI_MAX = len(UNI_VALUES) - 1
 
-# Type
-TYPE_VALUES = ["none", "triangle", "square", "pentagon", "hexagon", "circle"]
-TYPE_MIN = 0
-TYPE_MAX = len(TYPE_VALUES) - 1
+PILimage = Image.new('RGB', (850, 1010), 'white') #960 but 40 added for buffer in between
+testimg = Image.new('RGB', (160, 160), 'white')
 
-# Size
-SIZE_VALUES = [0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-SIZE_MIN = 0
-SIZE_MAX = len(SIZE_VALUES) - 1
+# Use numpy to convert the PIL image into a numpy array
+npImage = np.array(PILimage)
+npTest = np.array(testimg)
 
-# Color
-COLOR_VALUES = [255, 224, 196, 168, 140, 112, 84, 56, 28, 0]
-COLOR_MIN = 0
-COLOR_MAX = len(COLOR_VALUES) - 1
+# problem image generation
+for i in range(8):
+    offsetx = (i%3*160)
+    if i in range(0, 2):
+        offsety = 0
+    if i in range(3, 5):
+        offsety = 160
+    if i in range(6, 8):
+        offsety = 320
+    for num in range(160):
+        for num2 in range(160):
+            if images[i][num][num2] != 255:
+                npImage[num+offsety][num2+offsetx] = images[i][num][num2]
 
-# Angle: self-rotation
-ANGLE_VALUES = [-135, -90, -45, 0, 45, 90, 135, 180]
-ANGLE_MIN = 0
-ANGLE_MAX = len(ANGLE_VALUES) - 1
+# answer choice
+for i in range(9, 16):
+    offsetx = (i%2*160)+530
+    if i in range(9, 11):
+        offsety = 0
+    if i in range(11, 13):
+        offsety = 160
+    if i in range(13, 15):
+        offsety = 320
+    if i in range(15, 17):
+        offsety = 480
+    for num in range(160):
+        for num2 in range(160):
+            if images[i][num][num2] != 255:
+                npImage[num+offsetx][num2+offsety] = images[i][num][num2]
+
+# converting back to PIL Image and saving it
+PIL_image = Image.fromarray(np.uint8(npImage)).convert('RGB')
+PIL_image.show()
+
+
+# this is for testing each figure when needed
+#for num in range(160):
+ #   for num2 in range(160):
+  #      if images[1][num][num2] != 255:
+   #         npTest[num][num2] = 0
+
+#test_img = Image.fromarray(np.uint8(npTest)).convert('RGB')
+#test_img.show()
+
+
+# old stuff
+#hex = HEX('test')
+#hex.makeHex(200,0, None, img, 50)
+#sq = SQUARE('test')
+#sq.makeSquare(-200,0, None, img, 70)
+#img.show()
